@@ -1,0 +1,7 @@
+print("---------------- Welcome to Sundrop Caves! ----------------")
+print("You spent all your money to get the deed to a mine, a small")
+print("  backpack, a simple pickaxe and a magical portal stone.")
+print()
+print("How quickly can you get the 1000 GP you need to retire")
+print("  and live happily ever after?")
+print("-----------------------------------------------------------")

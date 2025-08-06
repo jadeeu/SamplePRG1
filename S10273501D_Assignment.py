@@ -1,4 +1,16 @@
-game_state = 'main'
+player = {
+    "name": "Cher",
+    "gp": 0,
+    "pickaxe_level": 1,     # 1 = copper, 2 = silver, 3 = gold
+    "backpack_capacity": 10,
+    "backpack": {"copper": 0, "silver": 0, "gold": 0},
+    "load": 0,
+    "day": 1,
+    "steps": 0,
+    "turns_left": 20,
+    "position": (0, 0),     # (row, col)
+    "portal_position": (0, 0),
+}
 print("---------------- Welcome to Sundrop Caves! ----------------")
 print("You spent all your money to get the deed to a mine, a small")
 print("  backpack, a simple pickaxe and a magical portal stone.")
@@ -7,9 +19,11 @@ print("How quickly can you get the 500 GP you need to retire")
 print("  and live happily ever after?")
 print("-----------------------------------------------------------")
 
+day = 1
+
 def show_town_menu():
     print()
-    # TODO: Show Day
+    print(day)
     print("----- Sundrop Town -----")
     print("(B)uy stuff")
     print("See Player (I)nformation")

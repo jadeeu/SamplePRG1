@@ -169,6 +169,165 @@ def player_information(player):
     print(f"Steps Taken: {player['steps']}")
     print("------------------------------")
 
+mine_map = [
+    list("  C ???????????????????"),
+    list(" CP ???????????????????"),
+    list("????CCCC ???????????????????"),
+    list("??????????????????????????????"),
+    list("??????????????????????????????"),
+    list("??????????????????????????????"),
+    list("??????????????????????????????"),
+    list("??????????????????????????????"),
+    list("??????????????????????????????"),
+    list("??????????????????????????????"),
+]
+
+mine_width = len(mine_map[0])
+mine_height = len(mine_map)
+
+# Your functions you gave me:
+
+def initialize_discovered(width, height, player_x, player_y):
+    discovered = [[False for _ in range(width)] for _ in range(height)]
+    for dy in range(-1, 2):
+        for dx in range(-1, 2):
+            nx, ny = player_x + dx, player_y + dy
+            if 0 <= nx < width and 0 <= ny < height:
+                discovered[ny][nx] = True
+    return discovered
+
+def update_discovered(discovered, player_x, player_y):
+    height = len(discovered)
+    width = len(discovered[0])
+    for dy in range(-1, 2):
+        for dx in range(-1, 2):
+            nx, ny = player_x + dx, player_y + dy
+            if 0 <= nx < width and 0 <= ny < height:
+                discovered[ny][nx] = True
+
+def print_full_map(mine_map, discovered, player_x, player_y):
+    height = len(mine_map)
+    width = len(mine_map[0])
+    print("+" + "-" * width + "+")
+    for y in range(height):
+        row = "|"
+        for x in range(width):
+            if x == player_x and y == player_y:
+                row += "M"
+            elif (x, y) == (7, 1):  # portal position, hardcoded or from player.portal_position
+                row += "P"
+            elif discovered[y][x]:
+                row += mine_map[y][x]
+            else:
+                row += "?"
+        row += "|"
+        print(row)
+    print("+" + "-" * width + "+")
+
+def print_viewport(mine_map, player_x, player_y):
+    height = len(mine_map)
+    width = len(mine_map[0])
+    print("+---+")
+    for dy in range(-1, 2):
+        row = "|"
+        for dx in range(-1, 2):
+            nx, ny = player_x + dx, player_y + dy
+            if 0 <= nx < width and 0 <= ny < height:
+                if nx == player_x and ny == player_y:
+                    row += "M"
+                else:
+                    row += mine_map[ny][nx]
+            else:
+                row += " "
+        row += "|"
+        print(row)
+    print("+---+")
+
+def enter_mine(player):
+    # Starting player position inside mine (example)
+    player_x, player_y = 0, 0
+    discovered = initialize_discovered(mine_width, mine_height, player_x, player_y)
+
+    while True:
+        print_full_map(mine_map, discovered, player_x, player_y)
+        print("\nMove with WASD keys, (Q)uit mine:")
+        move = input("Your move? ").strip().lower()
+
+        if move == 'q':
+            print("Exiting mine...")
+            break
+
+        # Calculate new position
+        dx, dy = 0, 0
+        if move == 'w':
+            dy = -1
+        elif move == 's':
+            dy = 1
+        elif move == 'a':
+            dx = -1
+        elif move == 'd':
+            dx = 1
+        else:
+            print("Invalid move. Use W,A,S,D or Q.")
+            continue
+
+        new_x = player_x + dx
+        new_y = player_y + dy
+
+        # Check bounds
+        if 0 <= new_x < mine_width and 0 <= new_y < mine_height:
+            player_x, player_y = new_x, new_y
+            update_discovered(discovered, player_x, player_y)
+            player["steps"] += 1  # track steps taken in the mine
+        else:
+            print("You cannot move outside the mine!")
+
+# Modify your town_menu to call enter_mine when player selects 'e'
+
+def town_menu(player):
+    while True:
+        print(f"\nDAY {player['day']}")
+        print("----- Sundrop Town -----")
+        print("(B)uy stuff")
+        print("See Player (I)nformation")
+        print("See Mine (M)ap")
+        print("(E)nter mine")
+        print("Sa(V)e game")
+        print("(Q)uit to main menu")
+        print("------------------------")
+        choice = input("Your choice? ").strip().lower()
+
+        if choice == 'b':
+            while True:
+                shop_choice = show_shop_menu(player)
+                if shop_choice == 'l':
+                    break
+                player = buy_items(shop_choice, player)
+
+        elif choice == 'i':
+            player_information(player)
+
+        elif choice == 'm':
+            # Show full map with fog and discovery
+            # For simplicity, just call print_full_map with all tiles discovered except fog for unexplored
+            # You can store discovered grid as player state or just show full map here
+            # Let's assume we show full map with all tiles visible in town:
+            discovered_all = [[True]*mine_width for _ in range(mine_height)]
+            print_full_map(mine_map, discovered_all, 0, 0)  # Player is at 0,0 in town map view
+
+        elif choice == 'e':
+            enter_mine(player)
+
+        elif choice == 'v':
+            save_game(player)
+
+        elif choice == 'q':
+            print("\nReturning to main menu...")
+            break
+
+        else:
+            print("Invalid choice. Try again.")
+
 def main():
     while True:
         display_intro_and_main_menu()

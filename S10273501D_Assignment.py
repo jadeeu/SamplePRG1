@@ -1,9 +1,11 @@
 import json
 import os
+
 def display_intro_and_main_menu():
     print("---------------- Welcome to Sundrop Caves! ----------------")
     print("You spent all your money to get the deed to a mine, a small")
     print("backpack, a simple pickaxe and a magical portal stone.")
+    print()
     print("How quickly can you get the 500 GP you need to retire")
     print("and live happily ever after?")
     print("-----------------------------------------------------------")
@@ -46,7 +48,7 @@ def load_game():
     except (IOError, json.JSONDecodeError) as e:
         print(f"Error loading game: {e}")
         return None
-    
+
 def new_game():
     name = input("Greetings, miner! What is your name? ").strip()
     player = {
@@ -55,12 +57,15 @@ def new_game():
         "gp": 0,
         "pickaxe_level": 1,
         "backpack_capacity": 10,
-        "backpack": {"copper": 0, "silver": 0, "gold": 0}
+        "backpack": {"copper": 0, "silver": 0, "gold": 0},
+        "portal_position": (7, 1),
+        "steps": 0
     }
     print(f"Pleased to meet you, {name}. Welcome to Sundrop Town!")
-   
+    town_menu(player)
 
-    def town_menu(player):
+def town_menu(player):
+    while True:
         print(f"\nDAY {player['day']}")
         print("----- Sundrop Town -----")
         print("(B)uy stuff")
@@ -71,8 +76,34 @@ def new_game():
         print("(Q)uit to main menu")
         print("------------------------")
         print(f"You start with a backpack that can hold a maximum of {player['backpack_capacity']} pieces of mineral ore.")
+
         choice = input("Your choice? ").strip().lower()
-        return choice
+
+        if choice == 'b':
+            while True:
+                shop_choice = show_shop_menu(player)
+                if shop_choice == 'l':
+                    break
+                player = buy_items(shop_choice, player)
+
+        elif choice == 'i':
+            player_information(player)
+
+        elif choice == 'm':
+            print("\nMine map will be displayed here. (Coming soon...)")
+
+        elif choice == 'e':
+            print("\nEntering the mine... (Coming soon...)")
+
+        elif choice == 'v':
+            save_game(player)
+
+        elif choice == 'q':
+            print("\nReturning to main menu...")
+            break
+
+        else:
+            print("Invalid choice. Try again.")
 
 def show_shop_menu(player):
     print("\n----------------------- Shop Menu -------------------------")
@@ -130,10 +161,29 @@ def player_information(player):
     print(f"Name: {player['name']}")
     print(f"Day: {player['day']}")
     print(f"GP: {player['gp']}")
-    print(f"Pickaxe Level: {player['pickaxe_level']}")
+    pickaxe_names = {1: "copper", 2: "silver", 3: "gold"}
+    print(f"Pickaxe Level: {player['pickaxe_level']} ({pickaxe_names[player['pickaxe_level']]})")
     print(f"Backpack Capacity: {player['backpack_capacity']}")
     print(f"Backpack Contents: {player['backpack']}")
+    print(f"Portal Position: {player['portal_position']}")
+    print(f"Steps Taken: {player['steps']}")
     print("------------------------------")
+
+def main():
+    while True:
+        display_intro_and_main_menu()
+        choice = input("Enter choice: ").strip().lower()
+        if choice == 'n':
+            new_game()
+        elif choice == 'l':
+            player = load_game()
+            if player:
+                town_menu(player)
+        elif choice == 'q':
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Try again.")
 
 if __name__ == "__main__":
     main()

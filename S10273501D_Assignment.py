@@ -313,37 +313,50 @@ def enter_mine(player):
             print("You cannot move outside the mine!")
             continue
 
-        if player["mine_steps"] >= 20:
-            print("\n You've been in the mine too long! The portal pulls you back to town...")
-            # Sell ores
-            total_value = 0
-            prices = {"copper": 2, "silver": 5, "gold": 10}
-            for ore, qty in player["backpack"].items():
-                total_value += prices.get(ore, 0) * qty
-                player["backpack"][ore] = 0
-            if total_value > 0:
-                print(f" Sold all ores for {total_value} GP!")
-                player["gp"] += total_value
-            else:
-                print("You had nothing to sell.")
-            player["day"] += 1
-            print(f" It's now Day {player['day']}.")
-            player["mine_steps"] = 0
-            player["portal_position"] = (player_x, player_y)
-            player["discovered"] = discovered
+def return_to_town(player, discovered, player_x, player_y):
+    print("\nReturning to town...")
 
-            # Check for win condition AFTER selling ores
-            if player["gp"] >= 500:
-                print("-------------------------------------------------------------")
-                print(f"Woo-hoo! Well done, {player['name']}, you have {player['gp']} GP!")
-                print("You now have enough to retire and play video games every day.")
-                print(f"And it only took you {player['day']} days and {player['steps']} steps! You win!")
-                print("-------------------------------------------------------------")
-                return True  # signal to town_menu that player won
+    # Randomised prices each return
+    import random
+    prices = {
+        "copper": random.randint(1, 3),
+        "silver": random.randint(5, 8),
+        "gold" : random.randint(10, 18)
+    }
 
-            break
+    # Sell ores
+    total_value = 0
+    for ore, qty in player["backpack"].items():
+        if qty > 0:
+            ore_value = prices[ore] * qty
+            total_value += ore_value
+            print(f" Sold {qty} {ore} for {ore_value} GP ({prices[ore]} GP each)")
+            player["backpack"][ore] = 0
 
-    return False  # no win yet, continue game
+    if total_value > 0:
+        print(f" Total earned: {total_value} GP!")
+        player["gp"] += total_value
+    else:
+        print("You had nothing to sell.")
+
+    # Day passes
+    player["day"] += 1
+    print(f" It's now Day {player['day']}.")
+
+    # Reset mine state
+    player["mine_steps"] = 0
+    player["portal_position"] = (player_x, player_y)
+    player["discovered"] = discovered
+
+    # Win condition
+    if player["gp"] >= 500:
+        print("-------------------------------------------------------------")
+        print(f"Woo-hoo! Well done, {player['name']}, you have {player['gp']} GP!")
+        print("You now have enough to retire and play video games every day.")
+        print(f"And it only took you {player['day']} days and {player['steps']} steps! You win!")
+        print("-------------------------------------------------------------")
+        return True  # game won
+    return False  # keep playing
 
 
 def print_viewport(mine_map, player_x, player_y):

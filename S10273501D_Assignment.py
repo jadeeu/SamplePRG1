@@ -93,9 +93,13 @@ def town_menu(player):
             discovered = player.get("discovered")
             if not discovered:
                 discovered = [[False]*mine_width for _ in range(mine_height)]
-                print_full_map(mine_map, discovered, -1, -1)
+            print_town_map(mine_map, discovered, player)
+
         elif choice == 'e':
-            enter_mine(player)
+            won = enter_mine(player)
+            if won:
+                print("Returning to main menu...")
+                break
 
         elif choice == 'v':
             save_game(player)
@@ -220,6 +224,26 @@ def print_full_map(mine_map, discovered, player_x, player_y):
         for x in range(mine_width):
             if x == player_x and y == player_y:
                 row += "M"
+            elif discovered[y][x]:
+                row += mine_map[y][x]
+            else:
+                row += "?"
+        row += "|"
+        print(row)
+    print("+" + "-" * mine_width + "+")
+
+def print_town_map(mine_map, discovered, player):
+    portal_x, portal_y = player.get("portal_position", (7, 1))
+    player_x, player_y = 0, 0  # Player is always at top-left in town
+
+    print("+" + "-" * mine_width + "+")
+    for y in range(mine_height):
+        row = "|"
+        for x in range(mine_width):
+            if x == player_x and y == player_y:
+                row += "M"
+            elif x == portal_x and y == portal_y:
+                row += "P"
             elif discovered[y][x]:
                 row += mine_map[y][x]
             else:

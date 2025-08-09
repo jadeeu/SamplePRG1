@@ -279,7 +279,6 @@ def enter_mine(player):
                 if total_ore < player["backpack_capacity"]:
                     player["backpack"][ore] += 1
                     print(f"You mined 1 {ore} ore!")
-                    # Optionally turn tile into empty space after mining
                     mine_map[player_y][player_x] = ' '
                 else:
                     print("Your backpack is full! Sell some ores before mining more.")
@@ -306,11 +305,22 @@ def enter_mine(player):
             player["day"] += 1
             print(f" It's now Day {player['day']}.")
             player["mine_steps"] = 0
-            # Save portal position to current pos
             player["portal_position"] = (player_x, player_y)
-            # Save discovered map
             player["discovered"] = discovered
+
+            # Check for win condition AFTER selling ores
+            if player["gp"] >= 500:
+                print("-------------------------------------------------------------")
+                print(f"Woo-hoo! Well done, {player['name']}, you have {player['gp']} GP!")
+                print("You now have enough to retire and play video games every day.")
+                print(f"And it only took you {player['day']} days and {player['steps']} steps! You win!")
+                print("-------------------------------------------------------------")
+                return True  # signal to town_menu that player won
+
             break
+
+    return False  # no win yet, continue game
+
 
 def print_viewport(mine_map, player_x, player_y):
     height = len(mine_map)

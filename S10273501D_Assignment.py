@@ -98,7 +98,7 @@ def town_menu(player):
             print_town_map(mine_map, discovered, player)
 
         elif choice == 'e':
-            won = enter_mine(player)
+            won =  mine_exploration_loop(player)
             if won:
                 print("Returning to main menu...")
                 break
@@ -255,33 +255,56 @@ def print_town_map(mine_map, discovered, player):
     print("+" + "-" * mine_width + "+")
 
 def mine_exploration_loop(player):
+    # Get player's current position in the mine
     player_x, player_y = player.get("portal_position", (0, 0))
     discovered = player.get("discovered")
     if not discovered:
         discovered = initialize_discovered(mine_width, mine_height, player_x, player_y)
 
-    while True:
-        print_full_map(mine_map, discovered, player_x, player_y)
-        print(f"Steps in mine: {player.get('mine_steps', 0)} / 20")
+    # Initialize steps if not set
+    if "mine_steps" not in player:
+        player["mine_steps"] = 0
 
+    while True:
+        # Show the mine map with discovered tiles and player position
+        print_full_map(mine_map, discovered, player_x, player_y)
+        print(f"Steps in mine: {player['mine_steps']} / 20")
+
+        # Ask player for movement input
         move = input("Move with WASD keys, (Q)uit mine: ").lower()
 
+        # Handle quit option
         if move == "q":
-            # Pass needed args to return_to_town
+            # Call return_to_town, passing all needed info
             if return_to_town(player, discovered, player_x, player_y):
-                # Player won, exit loop/game
-                break
+                # Player won the game
+                return True
             else:
-                # Continue playing town menu or main menu
-                break
+                # Player just returned to town, continue game
+                return False
 
-        # Step limit check BEFORE moving
-        if player.get("mine_steps", 0) >= 20:
+        # Check if player is exhausted (max steps reached)
+        if player["mine_steps"] >= 20:
             print("You are exhausted and must return to town!")
             if return_to_town(player, discovered, player_x, player_y):
-                break
+                return True
             else:
-                break
+                return False
+
+        # === THIS IS THE MOVEMENT HANDLING BLOCK ===
+        if move in ["w", "a", "s", "d"]:
+            if can_move(player_x, player_y, move):
+                player["mine_steps"] += 1
+                player_x, player_y = update_player_position(player_x, player_y, move)
+                update_discovered(discovered, player_x, player_y)
+                mine_current_tile(player, player_x, player_y)
+            else:
+                print("You can't go that way!")
+        else:
+            print("Invalid move.")
+
+def enter_mine(player):
+    return mine_exploration_loop(player)
 
 def can_move(player_x, player_y, move):
     if move == 'w':
@@ -330,33 +353,6 @@ def mine_current_tile(player, player_x, player_y):
             print("Your backpack is full! Sell some ores before mining more.")
     else:
         print("Nothing to mine here.")
-
-# Example usage inside your mine loop:
-
-while True:
-    print_full_map(mine_map, player["discovered"], player_x, player_y)
-    print(f"Steps in mine: {player['mine_steps']} / 20")
-    move = input("Move with WASD keys, (Q)uit mine: ").lower()
-
-    if move == "q":
-        return_to_town(player, player["discovered"], player_x, player_y)
-        break
-
-    if player["mine_steps"] >= 20:
-        print("You are exhausted and must return to town!")
-        return_to_town(player, player["discovered"], player_x, player_y)
-        break
-
-    if move in ["w", "a", "s", "d"]:
-        if can_move(player_x, player_y, move):
-            player["mine_steps"] += 1
-            player_x, player_y = update_player_position(player_x, player_y, move)
-            update_discovered(player["discovered"], player_x, player_y)
-            mine_current_tile(player, player_x, player_y)
-        else:
-            print("You can't go that way!")
-    else:
-        print("Invalid move.")
 
 
 def return_to_town(player, discovered, player_x, player_y):

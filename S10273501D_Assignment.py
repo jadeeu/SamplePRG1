@@ -1,6 +1,7 @@
 import json
 import os
 
+#START
 def display_intro_and_main_menu():
     print("---------------- Welcome to Sundrop Caves! ----------------")
     print("You spent all your money to get the deed to a mine, a small")
@@ -15,6 +16,7 @@ def display_intro_and_main_menu():
     print("(Q)uit")
     print("------------------")
 
+#save game type shyt
 def save_game(player):
     filename = f"{player['name']}_save.json"
     try:
@@ -252,77 +254,127 @@ def print_town_map(mine_map, discovered, player):
         print(row)
     print("+" + "-" * mine_width + "+")
 
-def enter_mine(player):
-    # Start at portal position or (0,0) if missing
-    player_x, player_y = player.get("portal_position", (0,0))
-    # Use saved discovered map or initialize
+def mine_exploration_loop(player):
+    player_x, player_y = player.get("portal_position", (0, 0))
     discovered = player.get("discovered")
     if not discovered:
         discovered = initialize_discovered(mine_width, mine_height, player_x, player_y)
-    player["mine_steps"] = 0
-    player["discovered"] = discovered
 
     while True:
         print_full_map(mine_map, discovered, player_x, player_y)
-        print(f"Steps in mine: {player['mine_steps']} / 20")
-        print("\nMove with WASD keys, (Q)uit mine:")
-        move = input("Your move? ").strip().lower()
+        print(f"Steps in mine: {player.get('mine_steps', 0)} / 20")
 
-        if move == 'q':
-            print("Exiting mine...")
-            break
+        move = input("Move with WASD keys, (Q)uit mine: ").lower()
 
-        dx, dy = 0, 0
-        if move == 'w':
-            dy = -1
-        elif move == 's':
-            dy = 1
-        elif move == 'a':
-            dx = -1
-        elif move == 'd':
-            dx = 1
-        else:
-            print("Invalid move. Use W,A,S,D or Q.")
-            continue
-
-        new_x = player_x + dx
-        new_y = player_y + dy
-
-        if 0 <= new_x < mine_width and 0 <= new_y < mine_height:
-            player_x, player_y = new_x, new_y
-            update_discovered(discovered, player_x, player_y)
-            player["steps"] += 1
-            player["mine_steps"] += 1
-
-            # Try to collect ore if any, if backpack capacity allows
-            tile = mine_map[player_y][player_x]
-            ore_types = {"C": "copper", "S": "silver", "G": "gold"}
-            ore = ore_types.get(tile.upper())
-            if ore:
-                total_ore = sum(player["backpack"].values())
-                if total_ore < player["backpack_capacity"]:
-                    player["backpack"][ore] += 1
-                    print(f"You mined 1 {ore} ore!")
-                    mine_map[player_y][player_x] = ' '
-                else:
-                    print("Your backpack is full! Sell some ores before mining more.")
+        if move == "q":
+            # Pass needed args to return_to_town
+            if return_to_town(player, discovered, player_x, player_y):
+                # Player won, exit loop/game
+                break
             else:
-                print("Nothing to mine here.")
+                # Continue playing town menu or main menu
+                break
 
+        # Step limit check BEFORE moving
+        if player.get("mine_steps", 0) >= 20:
+            print("You are exhausted and must return to town!")
+            if return_to_town(player, discovered, player_x, player_y):
+                break
+            else:
+                break
+
+def can_move(player_x, player_y, move):
+    if move == 'w':
+        new_x, new_y = player_x, player_y - 1
+    elif move == 'a':
+        new_x, new_y = player_x - 1, player_y
+    elif move == 's':
+        new_x, new_y = player_x, player_y + 1
+    elif move == 'd':
+        new_x, new_y = player_x + 1, player_y
+    else:
+        return False
+
+    if 0 <= new_x < mine_width and 0 <= new_y < mine_height:
+        tile = mine_map[new_y][new_x]
+        # You can restrict movement here if certain tiles are blocked
+        # For now, assume all tiles except 'T' (tree) block movement
+        if tile == 'T':
+            return False
+        return True
+    return False
+
+def update_player_position(player_x, player_y, move):
+    if move == 'w':
+        return player_x, player_y - 1
+    elif move == 'a':
+        return player_x - 1, player_y
+    elif move == 's':
+        return player_x, player_y + 1
+    elif move == 'd':
+        return player_x + 1, player_y
+    return player_x, player_y
+
+def mine_current_tile(player, player_x, player_y):
+    tile = mine_map[player_y][player_x]
+    ore_types = {'C': 'copper', 'S': 'silver', 'G': 'gold'}
+
+    if tile.upper() in ore_types:
+        ore = ore_types[tile.upper()]
+        total_ore = sum(player["backpack"].values())
+        if total_ore < player["backpack_capacity"]:
+            player["backpack"][ore] += 1
+            print(f"You mined 1 {ore} ore!")
+            mine_map[player_y][player_x] = ' '  # Remove ore from map
         else:
-            print("You cannot move outside the mine!")
-            continue
+            print("Your backpack is full! Sell some ores before mining more.")
+    else:
+        print("Nothing to mine here.")
+
+# Example usage inside your mine loop:
+
+while True:
+    print_full_map(mine_map, player["discovered"], player_x, player_y)
+    print(f"Steps in mine: {player['mine_steps']} / 20")
+    move = input("Move with WASD keys, (Q)uit mine: ").lower()
+
+    if move == "q":
+        return_to_town(player, player["discovered"], player_x, player_y)
+        break
+
+    if player["mine_steps"] >= 20:
+        print("You are exhausted and must return to town!")
+        return_to_town(player, player["discovered"], player_x, player_y)
+        break
+
+    if move in ["w", "a", "s", "d"]:
+        if can_move(player_x, player_y, move):
+            player["mine_steps"] += 1
+            player_x, player_y = update_player_position(player_x, player_y, move)
+            update_discovered(player["discovered"], player_x, player_y)
+            mine_current_tile(player, player_x, player_y)
+        else:
+            print("You can't go that way!")
+    else:
+        print("Invalid move.")
+
 
 def return_to_town(player, discovered, player_x, player_y):
     print("\nReturning to town...")
 
-    # Randomised prices each return
     import random
+    # Randomised prices each return
     prices = {
         "copper": random.randint(1, 3),
         "silver": random.randint(5, 8),
-        "gold" : random.randint(10, 18)
+        "gold": random.randint(10, 18)
     }
+
+    # Show today's prices before selling
+    print("\n--- Today's Ore Prices ---")
+    for ore, price in prices.items():
+        print(f"{ore.title()}: {price} GP each")
+    print("--------------------------\n")
 
     # Sell ores
     total_value = 0

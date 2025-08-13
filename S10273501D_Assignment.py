@@ -1,5 +1,5 @@
-import json
-import os
+import json #handles saving/loading structured data in JSON format.
+import os #handles file paths and operating system interactions.
 
 #START
 def display_intro_and_main_menu():
@@ -25,6 +25,7 @@ def save_game(player):
         print(f"Game saved successfully as '{filename}'.")
     except IOError as e:
         print(f"Error saving game: {e}")
+#IOError means something went wrong when your game tried to save or load a file.
 
 def load_game():
     save_files = [f for f in os.listdir() if f.endswith("_save.json")]
@@ -50,6 +51,9 @@ def load_game():
     except (IOError, json.JSONDecodeError) as e:
         print(f"Error loading game: {e}")
         return None
+#This function looks in the folder for files ending with "_save.json", shows you the list,
+#  lets you pick one, and loads it into the game. If anything goes wrong, 
+# it tells you instead of crashing.
 
 def new_game():
     name = input("Greetings, miner! What is your name? ").strip()
@@ -65,6 +69,9 @@ def new_game():
     }
     print(f"Pleased to meet you, {name}. Welcome to Sundrop Town!")
     town_menu(player)
+#This function starts a brand new game by asking your name, 
+# creating your starting stats, greeting you,
+# and sending you into the main town menu to begin your adventure.
 
 def town_menu(player):
     while True:
@@ -200,6 +207,7 @@ mine_width = max(len(row) for row in mine_map)
 for i in range(mine_height):
     if len(mine_map[i]) < mine_width:
         mine_map[i] += [' '] * (mine_width - len(mine_map[i]))
+#Making sure the mine map is rectangular
 
 def initialize_discovered(width, height, player_x, player_y):
     discovered = [[False] * width for _ in range(height)]
@@ -209,6 +217,7 @@ def initialize_discovered(width, height, player_x, player_y):
             if 0 <= nx < width and 0 <= ny < height:
                 discovered[ny][nx] = True
     return discovered
+#sets what you can see at the start.
 
 def update_discovered(discovered, player_x, player_y):
     height = len(discovered)
@@ -218,6 +227,7 @@ def update_discovered(discovered, player_x, player_y):
             nx, ny = player_x + dx, player_y + dy
             if 0 <= nx < width and 0 <= ny < height:
                 discovered[ny][nx] = True
+#expands your visible area when you move.
 
 def print_full_map(mine_map, discovered, player_x, player_y):
     print("+" + "-" * mine_width + "+")
@@ -233,6 +243,7 @@ def print_full_map(mine_map, discovered, player_x, player_y):
         row += "|"
         print(row)
     print("+" + "-" * mine_width + "+")
+#shows the mine with fog of war and your position.
 
 def print_town_map(mine_map, discovered, player):
     portal_x, portal_y = player.get("portal_position", (7, 1))
@@ -326,6 +337,8 @@ def can_move(player_x, player_y, move):
             return False
         return True
     return False
+#This little code snippet is basically a movement check 
+# — it decides whether the player is allowed to move into a new spot on the map.
 
 def update_player_position(player_x, player_y, move):
     if move == 'w':
